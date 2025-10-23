@@ -1,0 +1,32 @@
+
+# Compiled binaries and object files
+/bin/
+/obj/
+*.o
+*.exe
+
+# Build and run logs
+*.log
+*.err
+
+# Experiment results (CSV) and temporary outputs
+experiments/results/*.csv
+
+# Python artifacts
+__pycache__/
+*.pyc
+
+# Large dataset binaries
+data/*.bin
+
+# Large logs
+mnist_run.log
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+Desktop.ini
+
