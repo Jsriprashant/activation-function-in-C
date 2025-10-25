@@ -18,17 +18,28 @@ int main() {
 
     char logf[256];
     sprintf(logf, "experiments/results/spirals_poly_%d.csv", 42);
-    FILE *lf = fopen(logf, "w");
-    if (!lf) {
-        fprintf(stderr, "Failed to open %s for writing\n", logf);
-        return 1;
-    }
-    fprintf(lf, "epoch,loss,acc");
     int total_params = 0;
     for (int i = 0; i < net.n_layers; ++i) total_params += act_get_nparams(&net.layers[i].act);
-    for (int i = 0; i < total_params; ++i) fprintf(lf, ",p%d", i);
-    fprintf(lf, "\n");
-    fclose(lf);
+    const char **names = NULL;
+    if (total_params > 0)
+    {
+        names = malloc(total_params * sizeof(char *));
+        int idx = 0;
+        for (int i = 0; i < net.n_layers; ++i)
+        {
+            Activation *a = &net.layers[i].act;
+            const char *atype = "unknown";
+            switch (a->type) { case PRELU: atype = "prelu"; break; case POLY_CUBIC: atype = "poly"; break; case PIECEWISE: atype = "piecewise"; break; case SWISH: atype = "swish"; break; case FIXED_RELU: atype = "relu"; break; case FIXED_SIG: atype = "sig"; break; }
+            for (int j = 0; j < act_get_nparams(a); ++j)
+            {
+                char *buf = malloc(64);
+                sprintf(buf, "l%d_%s_p%d", i, atype, j);
+                names[idx++] = buf;
+            }
+        }
+    }
+    log_csv_header(logf, total_params, names);
+    if (names) { for (int i = 0; i < total_params; ++i) free((void*)names[i]); free(names); }
 
     for (int e = 0; e < 100; ++e) {
         mat_t loss = train_step(&net, X, Y, &opt, 0);  // MSE

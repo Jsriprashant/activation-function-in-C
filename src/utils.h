@@ -30,5 +30,7 @@ mat_t sigmoid_deriv(mat_t x);
 // Write CSV row with optional activation parameters.
 // params: pointer to array of mat_t of length n_params (may be NULL if n_params==0)
 void log_csv(const char *fname, int epoch, mat_t loss, mat_t acc, int n_params, mat_t *params);
+// Write CSV header with human-readable parameter names (names array of length n_params)
+void log_csv_header(const char *fname, int n_params, const char **names);
 void srand_seed(unsigned int seed);
 #endif

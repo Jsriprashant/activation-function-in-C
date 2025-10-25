@@ -167,3 +167,21 @@ void srand_seed(unsigned int seed)
 {
     srand(seed);
 }
+
+void log_csv_header(const char *fname, int n_params, const char **names)
+{
+    FILE *f = fopen(fname, "w");
+    if (!f)
+    {
+        fprintf(stderr, "Failed to open %s for header: %s\n", fname, strerror(errno));
+        return;
+    }
+    fprintf(f, "epoch,loss,acc");
+    if (n_params > 0 && names)
+    {
+        for (int i = 0; i < n_params; ++i)
+            fprintf(f, ",%s", names[i]);
+    }
+    fprintf(f, "\n");
+    fclose(f);
+}

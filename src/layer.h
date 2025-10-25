@@ -7,6 +7,7 @@
 typedef struct
 {
     Matrix W, b, grad_W, grad_b, v_W, v_b, x_cache;
+    Matrix v_act; // optimizer velocity for activation params (1 x n_params)
     Activation act;
     int in_dim, out_dim;
 } Layer;

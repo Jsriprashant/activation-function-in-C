@@ -10,6 +10,7 @@ Layer init_layer(int in, int out, ActType t)
         alloc_matrix(1, out),  // grad_b: 1 x out
         alloc_matrix(in, out), // v_W: in x out
         alloc_matrix(1, out),  // v_b: 1 x out
+        alloc_matrix(1, 1),      // v_act placeholder (will be resized below)
         alloc_matrix(1024, in),  // x_cache: max_batch x in (increased)
         init_act(t, out),
         in, out};
@@ -20,6 +21,13 @@ Layer init_layer(int in, int out, ActType t)
     mat_scale(l.grad_b, 0.0);
     mat_scale(l.v_W, 0.0); // Zero velocities
     mat_scale(l.v_b, 0.0);
+    /* Allocate velocity buffer for activation params if needed */
+    if (l.act.n_params > 0)
+    {
+        free_matrix(l.v_act);
+        l.v_act = alloc_matrix(1, l.act.n_params);
+        mat_scale(l.v_act, 0.0);
+    }
     return l;
 }
 
@@ -31,6 +39,7 @@ void free_layer(Layer *l)
     free_matrix(l->grad_b);
     free_matrix(l->v_W);
     free_matrix(l->v_b);
+    free_matrix(l->v_act);
     free_matrix(l->x_cache);
     free_act(&l->act);
 }
