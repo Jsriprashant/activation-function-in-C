@@ -5,7 +5,7 @@ OBJDIR = obj
 BINDIR = bin
 
 # Source files (in src/)
-SRCS = $(SRCDIR)/utils.c $(SRCDIR)/activations.c $(SRCDIR)/layer.c $(SRCDIR)/network.c $(SRCDIR)/data.c $(SRCDIR)/optimizer.c
+SRCS = $(SRCDIR)/utils.c $(SRCDIR)/config.c $(SRCDIR)/activations.c $(SRCDIR)/layer.c $(SRCDIR)/network.c $(SRCDIR)/data.c $(SRCDIR)/optimizer.c
 OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRCS))
 
 # Ensure output directories exist

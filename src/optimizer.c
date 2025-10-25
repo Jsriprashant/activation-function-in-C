@@ -1,5 +1,6 @@
 #include "optimizer.h"
 #include "layer.h"
+#include "config.h"
 
 void sgd_update(Layer *l, SGD *opt)
 {
@@ -33,9 +34,10 @@ void sgd_update(Layer *l, SGD *opt)
             fprintf(stderr, "[DEBUG] Allocated v_act (size=%d) for layer (in=%d out=%d)\n", l->act.n_params, l->in_dim, l->out_dim);
         }
 
+        /* Activation grad clipping (L2-norm) — configurable via SGD.act_grad_clip or global config */
         Matrix gview = {l->act.n_params, 1, l->act.grad_act};
         mat_t gnorm = mat_l2_norm(gview);
-        mat_t max_g = 1.0; // threshold (tunable)
+        mat_t max_g = opt->act_grad_clip > 0 ? opt->act_grad_clip : ACT_GRAD_CLIP_NORM;
         if (gnorm > max_g)
         {
             mat_t scale = max_g / gnorm;
@@ -44,14 +46,22 @@ void sgd_update(Layer *l, SGD *opt)
             fprintf(stderr, "[DEBUG] Clipped act.grad norm from %.6f to %.6f for layer (in=%d out=%d)\n", gnorm, max_g, l->in_dim, l->out_dim);
         }
 
+        /* Per-parameter learning rate multipliers: l->act_lr if present (default 1.0) */
+        mat_t act_lr = opt->act_lr > 0 ? opt->act_lr : lr;
+        mat_t act_mom = opt->act_momentum >= 0 ? opt->act_momentum : mom;
         for (int i = 0; i < l->act.n_params; ++i)
         {
             mat_t g = l->act.grad_act[i];
-            /* momentum update: v = mom * v - lr * g; param += v */
-            l->v_act.data[i] = mom * l->v_act.data[i] - lr * g;
+            mat_t lr_mult = 1.0;
+            if (l->act_lr.rows * l->act_lr.cols >= l->act.n_params && l->act_lr.data)
+                lr_mult = l->act_lr.data[i];
+            mat_t effective_lr = act_lr * lr_mult;
+            /* momentum update for activation params */
+            l->v_act.data[i] = act_mom * l->v_act.data[i] - effective_lr * g;
             l->act.params[i] += l->v_act.data[i];
             l->act.grad_act[i] = 0.0; // reset
-            l->act.params[i] = fmin(10.0, fmax(-10.0, l->act.params[i])); // Bound
+            /* Bound activation params using global config */
+            l->act.params[i] = fmin(ACT_PARAM_MAX, fmax(ACT_PARAM_MIN, l->act.params[i]));
         }
 
         /* With exponent-cumulative parameterization for PIECEWISE taus, explicit ordering enforcement is unnecessary. */

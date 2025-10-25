@@ -1,13 +1,15 @@
 #include "network.h"
 #include <math.h> // INFINITY, log, exp, fmax
 #include "optimizer.h"
+#include "config.h"
 
-Network init_net(int input_dim, int *arch, int n_arch, ActType *acts)
+Network init_net(int input_dim, int *arch, int n_arch, ActType *acts, ActInitStrategy *act_strats)
 {
     Network net = {n_arch - 1, malloc((n_arch - 1) * sizeof(Layer)), input_dim};
     for (int i = 0; i < net.n_layers; ++i)
     {
-        net.layers[i] = init_layer(arch[i], arch[i + 1], acts[i]);
+        /* act_strats must be provided by the caller (no fallback) */
+        net.layers[i] = init_layer(arch[i], arch[i + 1], acts[i], act_strats[i]);
     }
     return net;
 }
@@ -121,8 +123,8 @@ mat_t train_step(Network *net, Matrix x, Matrix y, SGD *opt, int is_ce)
     // Clip grads (per layer W/b; acts bounded separately)
     for (int i = 0; i < net->n_layers; ++i)
     {
-        mat_clip_grad(net->layers[i].grad_W, 1.0);
-        mat_clip_grad(net->layers[i].grad_b, 1.0);
+        mat_clip_grad(net->layers[i].grad_W, GRAD_CLIP_NORM);
+        mat_clip_grad(net->layers[i].grad_b, GRAD_CLIP_NORM);
     }
     
 

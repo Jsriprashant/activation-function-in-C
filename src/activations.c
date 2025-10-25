@@ -1,6 +1,7 @@
 #include "activations.h"
+#include "config.h"
 
-Activation init_act(ActType t, int dim)
+Activation init_act(ActType t, int dim, ActInitStrategy strat)
 {
     Activation a;
     a.type = t;
@@ -28,9 +29,11 @@ Activation init_act(ActType t, int dim)
     {
         a.params = malloc(a.n_params * sizeof(mat_t));
         a.grad_act = calloc(a.n_params, sizeof(mat_t)); // Zero grads
-        /* Type-specific initialization strategies. These are explicit
-           (no generic fallback) and chosen to be reasonable defaults for
-           stable learning and ablation studies. Debug prints show values. */
+        /* Type-specific initialization strategies. Support multiple
+           strategies via 'strat' so experiments can compare inits.
+        */
+        /* First set sensible defaults (identity-like), then apply strategy tweaks. */
+        for (int i = 0; i < a.n_params; ++i) a.params[i] = 0.0;
         switch (t)
         {
         case PRELU:
@@ -64,11 +67,24 @@ Activation init_act(ActType t, int dim)
             }
             break;
         default:
-            /* For unexpected types, use small uniform noise to break symmetry */
-            {
-                Matrix tmp = {1, a.n_params, a.params};
-                mat_rand_uniform(tmp, -0.01, 0.01);
-            }
+            /* For unexpected types, leave zeros (or later apply strategy) */
+            break;
+        }
+
+        /* Apply initialization strategy overrides */
+        if (strat == ACT_INIT_NOISY)
+        {
+            Matrix tmp = {1, a.n_params, a.params};
+            mat_rand_uniform(tmp, -0.01, 0.01);
+        }
+        else if (strat == ACT_INIT_RANDOM_SMALL)
+        {
+            Matrix tmp = {1, a.n_params, a.params};
+            mat_rand_uniform(tmp, -0.05, 0.05);
+        }
+        else if (strat == ACT_INIT_IDENTITY)
+        {
+            /* keep identity-like defaults already set above */
         }
         /* Debug: print initial params for visibility. For PIECEWISE also print derived taus. */
         fprintf(stderr, "[INIT_ACT] type=%d n_params=%d params=", t, a.n_params);
@@ -139,7 +155,7 @@ void act_forward(Activation *a, Matrix in)
         mat_t tau2 = tau1 + exp(p2);
         mat_t taus[3] = {tau0, tau1, tau2};
         mat_t slopes[4] = {a->params[3], a->params[4], a->params[5], a->params[6]};
-        mat_t B = 5.0; // Bound for z
+        mat_t B = ACT_Z_CLIP_B; // Bound for z (configurable)
         for (int i = 0; i < n; ++i)
         {
             mat_t z = fmin(B, fmax(-B, a->z.data[i])); // Clip

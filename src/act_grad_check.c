@@ -31,7 +31,7 @@ mat_t numeric_grad(Activation *a, Matrix z, int p_idx, mat_t eps)
 
 int check_activation(ActType t, int dim)
 {
-    Activation a = init_act(t, dim);
+    Activation a = init_act(t, dim, ACT_INIT_RANDOM_SMALL);
     if (a.n_params == 0) {
         printf("Activation %d has no params; skipping.\n", t);
         free_act(&a);

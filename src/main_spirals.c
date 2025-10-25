@@ -8,8 +8,10 @@ int main() {
     int arch[] = {2, 4, 1};
     /* Use POLY_CUBIC for hidden layer and SIG for output */
     ActType acts[] = {POLY_CUBIC, FIXED_SIG};
-    Network net = init_net(2, arch, 3, acts);
-    SGD opt = {0.01, 0.9};
+    ActInitStrategy act_strats[] = {ACT_INIT_RANDOM_SMALL, ACT_INIT_IDENTITY};
+    Network net = init_net(2, arch, 3, acts, act_strats);
+    /* SGD: lr, momentum, act_lr, act_momentum, act_grad_clip */
+    SGD opt = {0.01, 0.9, 0.01, 0.9, 1.0};
 
     Matrix X, Y;
 

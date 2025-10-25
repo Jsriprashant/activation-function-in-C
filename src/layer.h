@@ -8,12 +8,13 @@ typedef struct
 {
     Matrix W, b, grad_W, grad_b, v_W, v_b, x_cache;
     Matrix v_act; // optimizer velocity for activation params (1 x n_params)
+    Matrix act_lr; // per-activation-parameter learning rate multipliers (1 x n_params), default ones
     Activation act;
     int in_dim, out_dim;
 } Layer;
 
 // Init layer: in_dim -> out_dim, act_type
-Layer init_layer(int in, int out, ActType t);
+Layer init_layer(int in, int out, ActType t, ActInitStrategy strat);
 
 // Free
 void free_layer(Layer *l);

@@ -13,10 +13,12 @@ int main()
          Use a sigmoid-like final activation for binary output. */
     /* Use a learnable poly in hidden and sigmoid at output for XOR */
     ActType acts[] = {POLY_CUBIC, FIXED_SIG};
-     Network net = init_net(2, arch, 3, acts);
+    ActInitStrategy act_strats[] = {ACT_INIT_RANDOM_SMALL, ACT_INIT_IDENTITY};
+    Network net = init_net(2, arch, 3, acts, act_strats);
 
     printf("Network initialized\n");
-    SGD opt = {0.01, 0.9};
+    /* SGD: lr, momentum, act_lr, act_momentum, act_grad_clip */
+    SGD opt = {0.01, 0.9, 0.01, 0.9, 1.0};
 
     Matrix X, Y;
     gen_xor(&X, &Y);

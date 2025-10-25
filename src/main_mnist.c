@@ -11,9 +11,11 @@ int main()
          Previously only two were provided which caused the final layer's
          Activation.type to be uninitialized and led to unpredictable outputs
          and inflated accuracy. */
-     ActType acts[] = {POLY_CUBIC, POLY_CUBIC, POLY_CUBIC};
-     Network net = init_net(784, arch, 4, acts); // 3 layers: 784->256->128->10
-    SGD opt = {0.01, 0.9};                      // lr=0.01, momentum=0.9
+    ActType acts[] = {POLY_CUBIC, POLY_CUBIC, POLY_CUBIC};
+    ActInitStrategy act_strats[] = {ACT_INIT_RANDOM_SMALL, ACT_INIT_RANDOM_SMALL, ACT_INIT_IDENTITY};
+    Network net = init_net(784, arch, 4, acts, act_strats); // 3 layers: 784->256->128->10
+    /* SGD: lr, momentum, act_lr, act_momentum, act_grad_clip */
+    SGD opt = {0.01, 0.9, 0.01, 0.9, 1.0};      // lr=0.01, momentum=0.9
 
     // Load train data
     Matrix X_train, Y_train;

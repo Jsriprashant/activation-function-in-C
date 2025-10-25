@@ -11,7 +11,7 @@ typedef struct
     int input_dim;
 } Network;
 
-Network init_net(int input_dim, int *arch, int n_arch, ActType *acts); // arch[0]=input, arch[1]=hid1, ... acts for each post-dense
+Network init_net(int input_dim, int *arch, int n_arch, ActType *acts, ActInitStrategy *act_strats); // arch[0]=input, arch[1]=hid1, ... acts and strategies for each post-dense
 
 void free_net(Network *net);
 

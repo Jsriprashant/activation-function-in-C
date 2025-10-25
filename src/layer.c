@@ -1,19 +1,22 @@
 #include "layer.h"
 #include <math.h> // fmax, etc.
 
-Layer init_layer(int in, int out, ActType t)
+Layer init_layer(int in, int out, ActType t, ActInitStrategy strat)
 {
-    Layer l = {
-        alloc_matrix(in, out), // W: in x out
-        alloc_matrix(1, out),  // b: 1 x out
-        alloc_matrix(in, out), // grad_W: in x out
-        alloc_matrix(1, out),  // grad_b: 1 x out
-        alloc_matrix(in, out), // v_W: in x out
-        alloc_matrix(1, out),  // v_b: 1 x out
-        alloc_matrix(1, 1),      // v_act placeholder (will be resized below)
-        alloc_matrix(1024, in),  // x_cache: max_batch x in (increased)
-        init_act(t, out),
-        in, out};
+    Layer l;
+    l.W = alloc_matrix(in, out); // W: in x out
+    l.b = alloc_matrix(1, out);  // b: 1 x out
+    l.grad_W = alloc_matrix(in, out); // grad_W: in x out
+    l.grad_b = alloc_matrix(1, out);  // grad_b: 1 x out
+    l.v_W = alloc_matrix(in, out); // v_W: in x out
+    l.v_b = alloc_matrix(1, out);  // v_b: 1 x out
+    l.v_act = alloc_matrix(1, 1);      // v_act placeholder (will be resized below)
+    l.x_cache = alloc_matrix(1024, in);  // x_cache: max_batch x in (increased)
+    l.act = init_act(t, out, strat);
+    l.in_dim = in;
+    l.out_dim = out;
+    /* initialize act_lr to empty (will be allocated if n_params > 0) */
+    l.act_lr.rows = 0; l.act_lr.cols = 0; l.act_lr.data = NULL;
     mat_rand_xavier(l.W, in);  // Fan-in for W
     mat_rand_xavier(l.b, out); // Fan-out approx for b
     mat_scale(l.b, 0.0);       // Bias zero-init
@@ -27,6 +30,10 @@ Layer init_layer(int in, int out, ActType t)
         free_matrix(l.v_act);
         l.v_act = alloc_matrix(1, l.act.n_params);
         mat_scale(l.v_act, 0.0);
+        /* Per-parameter learning rate multipliers: default to 1.0 (no scaling) */
+        l.act_lr = alloc_matrix(1, l.act.n_params);
+        for (int _i = 0; _i < l.act.n_params; ++_i)
+            l.act_lr.data[_i] = 1.0;
     }
     return l;
 }
@@ -40,6 +47,7 @@ void free_layer(Layer *l)
     free_matrix(l->v_W);
     free_matrix(l->v_b);
     free_matrix(l->v_act);
+    free_matrix(l->act_lr);
     free_matrix(l->x_cache);
     free_act(&l->act);
 }

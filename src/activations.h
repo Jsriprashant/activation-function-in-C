@@ -1,4 +1,4 @@
-#ifndef ACTIVATIONS_H
+// #ifndef ACTIVATIONS_H
 #define ACTIVATIONS_H
 
 #include "utils.h"
@@ -22,9 +22,16 @@ typedef struct
     Matrix z;        // Pre-act (for backprop)
     Matrix out;      // Post-act
 } Activation;
+// Initialization strategies for activation parameters
+typedef enum {
+    ACT_INIT_DEFAULT,
+    ACT_INIT_NOISY,       // default + small uniform noise
+    ACT_INIT_RANDOM_SMALL, // random small uniform init
+    ACT_INIT_IDENTITY     // explicit identity-like init when applicable
+} ActInitStrategy;
 
 // Init
-Activation init_act(ActType t, int dim); // dim for alloc
+Activation init_act(ActType t, int dim, ActInitStrategy strat); // dim for alloc
 void free_act(Activation *a);
 
 // Forward: in -> out
@@ -40,4 +47,4 @@ mat_t act_reg(Activation *a, mat_t lambda);
 mat_t *act_get_params(Activation *a);
 int act_get_nparams(Activation *a);
 
-#endif
+// #endif
