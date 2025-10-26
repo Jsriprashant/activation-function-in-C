@@ -18,6 +18,7 @@ import re
 import shutil
 import subprocess
 import csv
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -119,8 +120,33 @@ def append_ablation_row(out_csv, row):
 def main():
     out_csv = ROOT / 'experiments' / 'ablations.csv'
     seed = 42
+    # CLI flags
+    dry_run = '--dry-run' in sys.argv
+    include_mnist = '--include-mnist' in sys.argv or '--all' in sys.argv
+
+    # Clear previous outputs so every run replaces old files
+    print('Cleaning previous results in', RESULTS)
+    for p in RESULTS.glob('*.csv'):
+        try:
+            if p.name == '.gitkeep':
+                continue
+            p.unlink()
+        except Exception as e:
+            print('Warning: could not remove', p, e)
+    if out_csv.exists():
+        try:
+            out_csv.unlink()
+        except Exception as e:
+            print('Warning: could not remove', out_csv, e)
+
+    if dry_run:
+        print('Dry-run mode: no compilation or execution will be performed.')
     # Keep runs small for tests (limit combinations)
     for ds_name, main_path in datasets:
+        # optionally skip MNIST unless explicitly requested
+        if ds_name == 'mnist' and not include_mnist:
+            print('Skipping MNIST (use --include-mnist to enable)')
+            continue
         for act in act_choices:
             for strat in strat_choices:
                 exp_name = f"{ds_name}_{act.lower()}_{strat.lower()}"
@@ -132,6 +158,9 @@ def main():
                 print(f"Preparing {exp_name} for dataset {ds_name}")
                 patched = patch_main_for_config(main_path, act, strat, rel_log)
                 temp_main.write_text(patched)
+                if dry_run:
+                    print('  [dry-run] would compile and run:', temp_main)
+                    continue
                 # compile
                 try:
                     compile_main(temp_main, exe)
@@ -152,6 +181,17 @@ def main():
                     print(f"Logged: {ds_name},{act},{strat},{seed},{loss:.4f},{acc:.4f}")
                 else:
                     print('No metrics found for', exp_name)
+
+    # After runs, generate visualizations
+    if dry_run:
+        print('\nDry-run complete. To actually run experiments and generate plots, re-run without --dry-run')
+        return
+
+    print('\nGenerating visualizations by calling viz/run_all_plots.py')
+    try:
+        subprocess.run([sys.executable, str(ROOT / 'viz' / 'run_all_plots.py')], check=True)
+    except subprocess.CalledProcessError:
+        print('Warning: plotting runner returned non-zero exit code')
 
 if __name__ == '__main__':
     main()

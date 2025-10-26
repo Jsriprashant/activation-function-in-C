@@ -119,6 +119,56 @@ Notes:
 - The project uses only the C standard library math (`-lm`). No other C dependencies are required.
 - If you see function-signature or missing-symbol errors after modifying code, a `make clean` or removing stale object files under `obj/` then recompiling helps.
 
+## Run everything with a single command
+
+This repository includes a one-stop script that will (re)run the ablation sweep, compile the generated mains, run experiments, and regenerate all visualizations each time you run it.
+
+- Quick dry-run (no compilation or execution):
+
+```powershell
+python scripts/run_ablation.py --dry-run
+```
+
+- Run the full ablation for XOR and Spirals (default):
+
+```powershell
+python scripts/run_ablation.py
+```
+
+- Include MNIST runs (may be slow):
+
+```powershell
+python scripts/run_ablation.py --include-mnist
+# or equivalently
+python scripts/run_ablation.py --all
+```
+
+The script will overwrite previous results. It clears `experiments/results/*.csv` and `experiments/ablations.csv` at startup so every run produces fresh outputs. After experiments complete the script automatically calls the plotting runner to write PNGs to `viz/results/`.
+
+If you prefer to run only the plotting stage (no compilation), run:
+
+```powershell
+python viz/run_all_plots.py
+```
+
+By default `viz/run_all_plots.py` runs the plotting scripts that work out-of-the-box with the current repository configuration. Pass `--all` to attempt running every plotting script (some scripts require extra inputs and may error).
+
+## Cleanup generated and temporary files
+
+To wipe generated mains, binaries, CSVs and plots (safe to run before a fresh ablation):
+
+```powershell
+# remove generated temporary mains & executables
+Remove-Item -Force -Recurse obj\main_*.c,obj\*.exe -ErrorAction SilentlyContinue
+# remove experiment CSVs and ablation summary (will be recreated on next run)
+Remove-Item -Force experiments\results\*.csv -ErrorAction SilentlyContinue
+Remove-Item -Force experiments\ablations.csv -ErrorAction SilentlyContinue
+# remove generated visualization images
+Remove-Item -Force viz\results\*.png -ErrorAction SilentlyContinue
+```
+
+If you use git and want to restore removed generated files later, keep them in your working tree or re-run the ablation script.
+
 ## Data generation
 
 Small generators are available in `data/`:
